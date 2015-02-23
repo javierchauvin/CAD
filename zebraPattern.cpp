@@ -11,13 +11,14 @@
 
 using namespace std;
 
-vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix 
+vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
+vector<vecMath> Plane;
 
 zebraPattern::zebraPattern( string fileN )
 {
 	fileName = fileN;
 	readData();
-	getContainingBox();
+	getLightPlain(getContainingBox());	
 	printData();
 }
 
@@ -62,8 +63,8 @@ std::vector<Vertice> zebraPattern::getContainingBox ( void ){
 	//Vector 2 for dimentions of the bounding box
 	std::vector<Vertice> ContainingBox(3);
  
-	for(int i = 0; i < DataFile.size(); i++){
-		for(int j = 0; j < DataFile.at(i).size(); j++){
+	for(unsigned int i = 0; i < DataFile.size(); i++){
+		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
 
 			if ( DataFile.at(i).at(j).Vertex.x < ContainingBox[0].x ){
 				ContainingBox[0].x = DataFile.at(i).at(j).Vertex.x;
@@ -93,8 +94,25 @@ std::vector<Vertice> zebraPattern::getContainingBox ( void ){
 	return ContainingBox;
 }
 
-void getLightPlain ( void ){
+///////////////////////////////////////////////////////
+// The plain is defined as P(u,v) = Po + ua + vb
+//	The plain is parallel to the plain xz so a and b are unitary vectors on x and z
+// Po is placed with coordinates minX and minZ from teh containing box.
+// y is maxY + the side of the containing box
+///////////////////////////////////////////////////////
+void zebraPattern::getLightPlain ( vector<Vertice> Box ){
 
+	Vertice Vectors;
+	//vector a
+	Vectors.x = 1; Vectors.y = 0; Vectors.z = 0; 
+	Plane.push_back(Vectors);
+	//vector a
+	Vectors.x = 0; Vectors.y = 0; Vectors.z = 1;
+	Plane.push_back(Vectors);
+	//Po
+	Vectors.x = Box.at(0).x; Vectors.z = Box.at(0).z;
+	Vectors.y = Box.at(1).y + Box.at(2).y;
+	Plane.push_back(Vectors);
 }
 
 std::vector<Vertice> zebraPattern::getNormal ( Vertice ActualPoint ){
@@ -123,11 +141,17 @@ void zebraPattern::printData ( void ){
 	//}
 
 	std::cout<< "DataFile\n";
-	for(int i = 0; i < DataFile.size(); i++){
-		for(int j = 0; j < DataFile.at(i).size(); j++){
+	for(unsigned int i = 0; i < DataFile.size(); i++){
+		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
 			std::cout<<DataFile.at(i).at(j).Vertex.x;
 		}
 		std::cout<<'\n';
 	}
+
+	std::cout<< "Plane: ";
+	for(unsigned int i = 0; i < 3; i++){
+		std::cout<<Plane.at(i).Vertex.x <<Plane.at(i).Vertex.y <<Plane.at(i).Vertex.z <<' ';
+	}
+	cout << '\n';
 }
 

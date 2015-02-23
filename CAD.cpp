@@ -15,9 +15,7 @@ using namespace std;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	zebraPattern Surface(std::string(FILE_NAME));
-
-	/*zebraPattern::zebraPattern(std::string(FILE_NAME));*/
+	zebraPattern Surface(string(FILE_NAME));
 	
 	std::cin.get();
 	return 0;
