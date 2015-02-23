@@ -10,12 +10,12 @@ class zebraPattern{
 public:
 	zebraPattern(string fileN);
 	~zebraPattern(void);
-	void readData ( void );
-	void zebraPattern::printData ( void );
 
 private:
 	string fileName;
-	vector<float> getContainingBox ( void );
+	void readData ( void );
+	void printData ( void );
+	vector<Vertice> getContainingBox ( void );
 	void getLightPlain ( void );
 	vector<Vertice> getNormal ( Vertice ActualPoint );
 	bool getNodeColor ( Vertice ActualPoint );

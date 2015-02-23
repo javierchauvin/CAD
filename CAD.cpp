@@ -16,8 +16,6 @@ using namespace std;
 int _tmain(int argc, _TCHAR* argv[])
 {
 	zebraPattern Surface(std::string(FILE_NAME));
-	Surface.readData();
-	Surface.printData();
 
 	/*zebraPattern::zebraPattern(std::string(FILE_NAME));*/
 	
