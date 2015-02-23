@@ -1,24 +1,21 @@
 #pragma once
 
-union Vertice {
-	float m_vVec[3];
-	struct {
-			float x;
-			float y;
-			float z;
-	};
-};
+#include "Utils.h"
+
+using namespace std;
 
 class vecMath
 {
-	Vertice Vertex;
-	vecMath() {};
 public:
+	Vertice Vertex;
+
+	vecMath() {};
 	vecMath(Vertice newPoint);
 	~vecMath();
 
 	float magnitude ();
 	Vertice unitVector ();
+	Vertice vecMath::vectorStringToVerticeVector ( vector<string>tokens );
 };
 
 
