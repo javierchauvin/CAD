@@ -5,6 +5,12 @@
 
 using namespace std; 
 
+struct CBox{
+	Vertice min;
+	Vertice max;
+	Vertice dimensions;
+};
+
 class zebraPattern{
 	 
 public:
@@ -26,9 +32,9 @@ private:
 	//0: min values on x,y,z
 	//1: max values on x,y,z
 	//2: dimensions of the containing box on x,y,z
-	vector<Vertice> getContainingBox ( void );
+	CBox getContainingBox ( void );
 
-	void getLightPlain ( vector<Vertice> Plain );
+	void getLightPlain ( CBox Box );
 	vector<Vertice> getNormal ( Vertice ActualPoint );
 	bool getNodeColor ( Vertice ActualPoint );
 };

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 
+#define STRIP_FACTOR 0.1
+
 //enum LightColor {
 //	GRAY 
 //}
@@ -12,7 +14,13 @@
 using namespace std;
 
 vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
-vector<vecMath> Plane;
+
+struct LightPlane{
+   vecMath a;
+   vecMath b;
+   vecMath Po;
+	float	  stripWidth;
+}Plane;
 
 zebraPattern::zebraPattern( string fileN )
 {
@@ -55,43 +63,42 @@ void zebraPattern::readData ( void ){
 	}
 }
 
-
-std::vector<Vertice> zebraPattern::getContainingBox ( void ){
+CBox zebraPattern::getContainingBox ( void ){
 	
 	//Vector 0 for min values
 	//Vector 1 for max values
 	//Vector 2 for dimentions of the bounding box
-	std::vector<Vertice> ContainingBox(3);
+	CBox Box = {0};
  
 	for(unsigned int i = 0; i < DataFile.size(); i++){
 		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
 
-			if ( DataFile.at(i).at(j).Vertex.x < ContainingBox[0].x ){
-				ContainingBox[0].x = DataFile.at(i).at(j).Vertex.x;
+			if ( DataFile.at(i).at(j).Vertex.x < Box.min.x ){
+				Box.min.x = DataFile.at(i).at(j).Vertex.x;
 			}
-			if ( DataFile.at(i).at(j).Vertex.y < ContainingBox[0].y ){
-				ContainingBox[0].y = DataFile.at(i).at(j).Vertex.y;
+			if ( DataFile.at(i).at(j).Vertex.y < Box.min.y ){
+				Box.min.y = DataFile.at(i).at(j).Vertex.y;
 			}
-			if ( DataFile.at(i).at(j).Vertex.z < ContainingBox[0].z ){
-				ContainingBox[0].z = DataFile.at(i).at(j).Vertex.z;
+			if ( DataFile.at(i).at(j).Vertex.z < Box.min.z ){
+				Box.min.z = DataFile.at(i).at(j).Vertex.z;
 			}
 
-			if ( ContainingBox[1].x < DataFile.at(i).at(j).Vertex.x ){
-				ContainingBox[1].x = DataFile.at(i).at(j).Vertex.x;
+			if ( Box.max.x < DataFile.at(i).at(j).Vertex.x ){
+				Box.max.x = DataFile.at(i).at(j).Vertex.x;
 			}
-			if ( ContainingBox[1].y < DataFile.at(i).at(j).Vertex.y ){
-				ContainingBox[1].y = DataFile.at(i).at(j).Vertex.y;
+			if ( Box.max.y < DataFile.at(i).at(j).Vertex.y ){
+				Box.max.y = DataFile.at(i).at(j).Vertex.y;
 			}
-			if ( ContainingBox[1].z < DataFile.at(i).at(j).Vertex.z ){
-				ContainingBox[1].z = DataFile.at(i).at(j).Vertex.z;
+			if ( Box.max.z < DataFile.at(i).at(j).Vertex.z ){
+				Box.max.z = DataFile.at(i).at(j).Vertex.z;
 			}
 		}
 	}
 	
-	ContainingBox[2].x = ContainingBox[1].x - ContainingBox[0].x;
-	ContainingBox[2].y = ContainingBox[1].y - ContainingBox[0].y; 
-	ContainingBox[2].z = ContainingBox[1].z - ContainingBox[0].z; 
-	return ContainingBox;
+	Box.dimensions.x = Box.max.x - Box.min.x;
+	Box.dimensions.y = Box.max.y - Box.min.y;
+	Box.dimensions.z = Box.max.z - Box.min.z; 
+	return Box;
 }
 
 ///////////////////////////////////////////////////////
@@ -100,19 +107,20 @@ std::vector<Vertice> zebraPattern::getContainingBox ( void ){
 // Po is placed with coordinates minX and minZ from teh containing box.
 // y is maxY + the side of the containing box
 ///////////////////////////////////////////////////////
-void zebraPattern::getLightPlain ( vector<Vertice> Box ){
 
-	Vertice Vectors;
+void zebraPattern::getLightPlain ( CBox Box ){
+
+	vecMath Vectors;
 	//vector a
-	Vectors.x = 1; Vectors.y = 0; Vectors.z = 0; 
-	Plane.push_back(Vectors);
-	//vector a
-	Vectors.x = 0; Vectors.y = 0; Vectors.z = 1;
-	Plane.push_back(Vectors);
+	Plane.a.Vertex.x = 1; Plane.a.Vertex.y = 0; Plane.a.Vertex.z = 0; 
+
+	//vector b
+	Plane.b.Vertex.x = 0; Plane.b.Vertex.y = 0; Plane.b.Vertex.z = 1; 
 	//Po
-	Vectors.x = Box.at(0).x; Vectors.z = Box.at(0).z;
-	Vectors.y = Box.at(1).y + Box.at(2).y;
-	Plane.push_back(Vectors);
+	Plane.Po.Vertex.x = Box.min.x; Plane.Po.Vertex.z = Box.min.z;
+	Plane.Po.Vertex.y = Box.max.y + Box.dimensions.y;
+
+	Plane.stripWidth = Box.dimensions.z * STRIP_FACTOR;
 }
 
 std::vector<Vertice> zebraPattern::getNormal ( Vertice ActualPoint ){
@@ -149,9 +157,10 @@ void zebraPattern::printData ( void ){
 	}
 
 	std::cout<< "Plane: ";
-	for(unsigned int i = 0; i < 3; i++){
-		std::cout<<Plane.at(i).Vertex.x <<Plane.at(i).Vertex.y <<Plane.at(i).Vertex.z <<' ';
-	}
+	std::cout<<Plane.a.Vertex.x <<" " <<Plane.a.Vertex.y <<" " <<Plane.a.Vertex.z <<" - ";
+	std::cout<<Plane.b.Vertex.x <<" " <<Plane.b.Vertex.y <<" " <<Plane.b.Vertex.z <<" - ";
+	std::cout<<Plane.Po.Vertex.x <<" " <<Plane.Po.Vertex.y <<" " <<Plane.Po.Vertex.z <<" - ";
+	cout<< Plane.stripWidth;
 	cout << '\n';
 }
 
