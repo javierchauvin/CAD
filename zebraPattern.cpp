@@ -1,13 +1,7 @@
 #include "StdAfx.h"
 #include "zebraPattern.h"
 #include "vecMath.h"
-
-//#using <mscorlib.dll>
-//#using <System.dll>
 #include <fstream>
-#include <sstream>
-
-#include <iostream>
 
 #define STRIP_FACTOR 0.1
 #define B_FACTOR		0.9
@@ -39,7 +33,7 @@ zebraPattern::zebraPattern( string fileN )
 	Vertice v, P, aCrossb;
 	vector<bool>colColor;
 
-	cout << "The .vrl is being generated\n";
+	cout << "The .vrl is being generated ...\n";
 
 	fileName = fileN;
 	readData();
@@ -122,9 +116,6 @@ void zebraPattern::readData ( void ){
 
 CBox zebraPattern::getContainingBox ( void ){
 	
-	//Vector 0 for min values
-	//Vector 1 for max values
-	//Vector 2 for dimentions of the bounding box
 	CBox Box = {0};
  
 	for(unsigned int i = 0; i < DataFile.size(); i++){
@@ -225,17 +216,6 @@ bool zebraPattern::getNodeColor ( Vertice InterPoint ){
   
 void zebraPattern::printData ( void ){
 
-	//std::cout << "The contents of fifth are:\n";
-	//vector<vector<vecMath>>::iterator row;
-	//vector<vecMath>::iterator colum;
-
-	//for (	row = DataFile.begin(); row < DataFile.end(); row++ ){
-	//	for (	colum = (*row).begin();	colum != (*row).end(); colum++ ){
-	//		std::cout<< (*colum).Vertex.x;
-	//	}
-	//	std::cout<<'\n';
-	//}
-
 	std::cout<< "DataFile\n";
 	for(unsigned int i = 0; i < DataFile.size(); i++){
 		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
@@ -260,21 +240,13 @@ void zebraPattern::printData ( void ){
 	}
 }
 
-//#include "StdAfx.h"
-//#include "Export.h"
-//#using <mscorlib.dll>
-////#include "Utils.h"
-////#include "vecMath"
-////#include <iostream>
-////#include <vector>
-//
-////using namespace std;
-//using namespace System;
-
 void zebraPattern::createVRML ( void ){
 
 	vector<vector<int>> Faces;
 	vector<int> face;
+
+	vector<vector<int>> colorFaces;
+	vector<int> colorface;
 
 	std::ofstream outfile ("Surface.wrl");
 	outfile << "#VRML V2.0 utf8" << std::endl;
@@ -283,39 +255,35 @@ void zebraPattern::createVRML ( void ){
 	outfile << "	Shape{" << std::endl;
 	outfile << "		geometry IndexedFaceSet{" << std::endl;
 	outfile << "			coord Coordinate{" << std::endl;
-	outfile << "				point[";
-	
-	//print the points
+	outfile << "				point[" << std::endl;
 
 	for(unsigned int i = 0; i < DataFile.size(); i++){
 		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
-			outfile << DataFile[i][j].Vertex.x;
+			outfile <<"						" << DataFile[i][j].Vertex.x;
 			outfile <<" ";
-			outfile <<  DataFile[i][j].Vertex.y;
+			outfile << DataFile[i][j].Vertex.y;
 			outfile <<" ";
 			outfile << DataFile[i][j].Vertex.z<<","<< std::endl;
 
-			//sub(DataFile[i][j+1].Vertex , DataFile[i][j].Vertex),
-			//sub(DataFile[i+1][j].Vertex , DataFile[i][j].Vertex));
-
 			if ( i < DataFile.size()-1 && j < DataFile.at(i).size()-1 ){
 				int l, k;
-				l=i;	k=j;		face.push_back(l*DataFile.size()+k);   
-				l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);
-				l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);
-				l=i+1;k=j;		face.push_back(l*DataFile.size()+k);
+				l=i;	k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
+				l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
+				l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
+				l=i+1;k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
 				Faces.push_back(face);
 				face.clear();
+				colorFaces.push_back(colorface);
+				colorface.clear();
 			}
 		}
 	}
 	outfile << "						]" << std::endl;
 	outfile << "			}" << std::endl;
 
-	outfile << "			coordIndex[";
-
+	outfile << "			coordIndex[" << std::endl;;
 	for(unsigned int i = 0; i < Faces.size(); i++){
-		//outfile << "						"<< std::endl;
+		outfile << "						";
 		for(unsigned int j = 0; j < Faces.at(i).size(); j++){
 			outfile << Faces[i][j];
 			outfile <<", ";
@@ -328,12 +296,14 @@ void zebraPattern::createVRML ( void ){
 	outfile << "				color[ 1 1 1, 0 0 0 ]" << std::endl;
 	outfile << "			}" << std::endl;
 
-	outfile << "			colorIndex["<< std::endl;
-	for(unsigned int i = 0; i < Color.size(); i++){
-		//outfile << "						";
-		for(unsigned int j = 0; j < Color.at(i).size(); j++){
-			outfile << Color[i][j]<<", "<< std::endl;
+	outfile << "			colorIndex[" << std::endl;;
+	for(unsigned int i = 0; i < colorFaces.size(); i++){
+		outfile << "						";
+		for(unsigned int j = 0; j < colorFaces.at(i).size(); j++){
+			outfile << colorFaces[i][j];
+			outfile <<", ";
 		}
+		outfile <<"-1,"<< std::endl;
 	}
 	outfile << "						 ]" << std::endl;
 
