@@ -2,14 +2,19 @@
 #include "zebraPattern.h"
 #include "vecMath.h"
 
+//#using <mscorlib.dll>
+//#using <System.dll>
 #include <fstream>
 #include <sstream>
+
+#include <iostream>
 
 #define STRIP_FACTOR 0.1
 #define B_FACTOR		0.9
 #define NORMAL_RANGE 3
 
 using namespace std;
+//using namespace System;
 
 struct LightPlane{
    vecMath a;
@@ -33,6 +38,8 @@ zebraPattern::zebraPattern( string fileN )
 	vecMath Normal;
 	Vertice v, P, aCrossb;
 	vector<bool>colColor;
+
+	cout << "The .vrl is being generated\n";
 
 	fileName = fileN;
 	readData();
@@ -75,7 +82,9 @@ zebraPattern::zebraPattern( string fileN )
 		Color.push_back(colColor);
 		colColor.clear();
 	}
-	printData();
+	//printData();
+
+	createVRML();
 }
 
 zebraPattern::~zebraPattern(void)
@@ -230,7 +239,7 @@ void zebraPattern::printData ( void ){
 	std::cout<< "DataFile\n";
 	for(unsigned int i = 0; i < DataFile.size(); i++){
 		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
-			std::cout<<DataFile.at(i).at(j).Vertex.x;
+			std::cout<<DataFile.at(i).at(j).Vertex.x<<" " <<DataFile.at(i).at(j).Vertex.y <<" " <<DataFile.at(i).at(j).Vertex.z <<" - ";;
 		}
 		std::cout<<'\n';
 	}
@@ -251,3 +260,86 @@ void zebraPattern::printData ( void ){
 	}
 }
 
+//#include "StdAfx.h"
+//#include "Export.h"
+//#using <mscorlib.dll>
+////#include "Utils.h"
+////#include "vecMath"
+////#include <iostream>
+////#include <vector>
+//
+////using namespace std;
+//using namespace System;
+
+void zebraPattern::createVRML ( void ){
+
+	vector<vector<int>> Faces;
+	vector<int> face;
+
+	std::ofstream outfile ("Surface.wrl");
+	outfile << "#VRML V2.0 utf8" << std::endl;
+	outfile << "#" << std::endl;
+	outfile << "Surface by Javier Chauvin" << std::endl<< std::endl<< std::endl;
+	outfile << "	Shape{" << std::endl;
+	outfile << "		geometry IndexedFaceSet{" << std::endl;
+	outfile << "			coord Coordinate{" << std::endl;
+	outfile << "				point[";
+	
+	//print the points
+
+	for(unsigned int i = 0; i < DataFile.size(); i++){
+		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
+			outfile << DataFile[i][j].Vertex.x;
+			outfile <<" ";
+			outfile <<  DataFile[i][j].Vertex.y;
+			outfile <<" ";
+			outfile << DataFile[i][j].Vertex.z<<","<< std::endl;
+
+			//sub(DataFile[i][j+1].Vertex , DataFile[i][j].Vertex),
+			//sub(DataFile[i+1][j].Vertex , DataFile[i][j].Vertex));
+
+			if ( i < DataFile.size()-1 && j < DataFile.at(i).size()-1 ){
+				int l, k;
+				l=i;	k=j;		face.push_back(l*DataFile.size()+k);   
+				l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);
+				l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);
+				l=i+1;k=j;		face.push_back(l*DataFile.size()+k);
+				Faces.push_back(face);
+				face.clear();
+			}
+		}
+	}
+	outfile << "						]" << std::endl;
+	outfile << "			}" << std::endl;
+
+	outfile << "			coordIndex[";
+
+	for(unsigned int i = 0; i < Faces.size(); i++){
+		//outfile << "						"<< std::endl;
+		for(unsigned int j = 0; j < Faces.at(i).size(); j++){
+			outfile << Faces[i][j];
+			outfile <<", ";
+		}
+		outfile <<"-1,"<< std::endl;
+	}
+	outfile << "						 ]" << std::endl;
+
+	outfile << "			color Color{" << std::endl;
+	outfile << "				color[ 1 1 1, 0 0 0 ]" << std::endl;
+	outfile << "			}" << std::endl;
+
+	outfile << "			colorIndex["<< std::endl;
+	for(unsigned int i = 0; i < Color.size(); i++){
+		//outfile << "						";
+		for(unsigned int j = 0; j < Color.at(i).size(); j++){
+			outfile << Color[i][j]<<", "<< std::endl;
+		}
+	}
+	outfile << "						 ]" << std::endl;
+
+	outfile << "			Solid FALSE" << std::endl;
+	outfile << "	}" << std::endl;
+	outfile << "}" << std::endl;
+
+	cout << "The .wlr file was created\n";
+}

@@ -36,5 +36,6 @@ private:
 	void getLightPlain ( CBox Box );
 	vecMath getNormal ( int i, int j );
 	bool zebraPattern::getNodeColor ( Vertice InterPoint );
+	void zebraPattern::createVRML ( void );
 };
 
