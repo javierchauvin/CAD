@@ -33,9 +33,8 @@ private:
 	//1: max values on x,y,z
 	//2: dimensions of the containing box on x,y,z
 	CBox getContainingBox ( void );
-
 	void getLightPlain ( CBox Box );
 	vecMath getNormal ( int i, int j );
-	bool getNodeColor ( Vertice ActualPoint );
+	bool zebraPattern::getNodeColor ( Vertice InterPoint );
 };
 

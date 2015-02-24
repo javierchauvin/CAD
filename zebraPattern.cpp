@@ -6,11 +6,8 @@
 #include <sstream>
 
 #define STRIP_FACTOR 0.1
+#define B_FACTOR		0.9
 #define NORMAL_RANGE 3
-
-//enum LightColor {
-//	GRAY 
-//}
 
 using namespace std;
 
@@ -21,17 +18,21 @@ struct LightPlane{
 	float	  stripWidth;
 }Plane;
 
+enum Color{
+	C_BLACK,	
+	C_GREY,	
+	C_WHITE,	
+};
+
 vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
+vector<vector<bool>>	Color;
 Vertice Eye;
 
 zebraPattern::zebraPattern( string fileN )
 {
 	vecMath Normal;
-	//vecMath v;
-	Vertice v;
-	Vertice P;
-
-	Vertice aCrossb;
+	Vertice v, P, aCrossb;
+	vector<bool>colColor;
 
 	fileName = fileN;
 	readData();
@@ -43,7 +44,7 @@ zebraPattern::zebraPattern( string fileN )
 			Normal = getNormal ( i, j );
 
 			/*
-				P(t) = P + tv  where
+				Q(t) = P + tv  where
 				v = 2(Eye - ActualPoint)UniNormal UniNormal
 			*/
 			v = multiScalar(	dotProduct( multiScalar(2.0, 
@@ -68,7 +69,11 @@ zebraPattern::zebraPattern( string fileN )
 						multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[i][j].Vertex),aCrossb) / 
 										 dotProduct(v,aCrossb),
 										 v));
+
+			colColor.push_back(getNodeColor(P));
 		}
+		Color.push_back(colColor);
+		colColor.clear();
 	}
 	printData();
 }
@@ -200,9 +205,12 @@ vecMath zebraPattern::getNormal ( int row, int col ){
 	return Normal;
 }
 
-bool zebraPattern::getNodeColor ( Vertice ActualPoint ){
-	bool Color; 
-	return Color; 
+bool zebraPattern::getNodeColor ( Vertice InterPoint ){
+	bool IsBlack = false;
+	if ( fmod(InterPoint.y,Plane.stripWidth) < Plane.stripWidth*B_FACTOR ){
+		IsBlack = true;
+	} 
+	return IsBlack;
 }
 
   
@@ -233,5 +241,13 @@ void zebraPattern::printData ( void ){
 	std::cout<<Plane.Po.Vertex.x <<" " <<Plane.Po.Vertex.y <<" " <<Plane.Po.Vertex.z <<" - ";
 	cout<< Plane.stripWidth;
 	cout << '\n';
+
+	std::cout<< "Color\n";
+	for(unsigned int i = 0; i < Color.size(); i++){
+		for(unsigned int j = 0; j < Color.at(i).size(); j++){
+			std::cout<<Color.at(i).at(j) <<" ";
+		}
+		std::cout<<'\n';
+	}
 }
 
