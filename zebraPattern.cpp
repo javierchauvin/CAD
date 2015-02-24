@@ -6,14 +6,13 @@
 #include <sstream>
 
 #define STRIP_FACTOR 0.1
+#define NORMAL_RANGE 3
 
 //enum LightColor {
 //	GRAY 
 //}
 
 using namespace std;
-
-vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
 
 struct LightPlane{
    vecMath a;
@@ -22,11 +21,55 @@ struct LightPlane{
 	float	  stripWidth;
 }Plane;
 
+vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
+Vertice Eye;
+
 zebraPattern::zebraPattern( string fileN )
 {
+	vecMath Normal;
+	//vecMath v;
+	Vertice v;
+	Vertice P;
+
+	Vertice aCrossb;
+
 	fileName = fileN;
 	readData();
-	getLightPlain(getContainingBox());	
+	getLightPlain(getContainingBox());
+	aCrossb = crossProduct(Plane.a.Vertex, Plane.b.Vertex);
+
+	for(unsigned int i = 0; i < DataFile.size(); i++){
+		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
+			Normal = getNormal ( i, j );
+
+			/*
+				P(t) = P + tv  where
+				v = 2(Eye - ActualPoint)UniNormal UniNormal
+			*/
+			v = multiScalar(	dotProduct( multiScalar(2.0, 
+																	sub(Eye , DataFile[i][j].Vertex) ), 
+													Normal.unitVector()), 
+									Normal.unitVector() 
+								);
+
+			/*
+				P(u,v) = Po + ua + vb
+				where: 
+					Po = Plane.Po	a = Plane.a b = Plane.b
+
+					Finding where the line and plane intersecs:
+
+										 (Plane.Po - ActualPoint)(a x b)
+				P = ActualPoint -  -------------------------------  v
+													v ( a x b )
+			
+			*/
+			P = add( DataFile[i][j].Vertex,
+						multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[i][j].Vertex),aCrossb) / 
+										 dotProduct(v,aCrossb),
+										 v));
+		}
+	}
 	printData();
 }
 
@@ -117,15 +160,43 @@ void zebraPattern::getLightPlain ( CBox Box ){
 	//vector b
 	Plane.b.Vertex.x = 0; Plane.b.Vertex.y = 0; Plane.b.Vertex.z = 1; 
 	//Po
-	Plane.Po.Vertex.x = Box.min.x; Plane.Po.Vertex.z = Box.min.z;
+	Plane.Po.Vertex.x = Box.min.x; 
 	Plane.Po.Vertex.y = Box.max.y + Box.dimensions.y;
+	Plane.Po.Vertex.z = Box.min.z;
 
 	Plane.stripWidth = Box.dimensions.z * STRIP_FACTOR;
+
+	Eye.x = Box.min.x;
+	Eye.y = Box.min.y - Box.dimensions.y; 
+	Eye.z = Box.min.z; 
 }
 
-std::vector<Vertice> zebraPattern::getNormal ( Vertice ActualPoint ){
-	std::vector<Vertice> Normal;
+// The normals could be positive or negative, the important part is to get the unit vector 
+// in order to 
+vecMath zebraPattern::getNormal ( int row, int col ){
+	vecMath Normal,proxNorm;
+	Normal.Vertex.x = 0; Normal.Vertex.y = 0; Normal.Vertex.z = 0;
 
+	for ( int i = row - NORMAL_RANGE; i < row + NORMAL_RANGE; i++)
+	{
+		for ( int j = col - NORMAL_RANGE; j < col + NORMAL_RANGE; j++)
+		{
+			if ( i < 0 ){
+				i = 0; j = 0;
+			}
+			if ( j < 0 ){
+				j = 0;
+			}
+
+			if ( i < DataFile.size()-1 && j < DataFile.at(i).size()-1){
+				proxNorm.Vertex = crossProduct( sub(DataFile[i][j+1].Vertex , DataFile[i][j].Vertex),
+														  sub(DataFile[i+1][j].Vertex , DataFile[i][j].Vertex));
+				Normal.Vertex.x = ( Normal.Vertex.x + proxNorm.Vertex.x) / 2;
+				Normal.Vertex.y = ( Normal.Vertex.y + proxNorm.Vertex.y) / 2;
+				Normal.Vertex.z = ( Normal.Vertex.z + proxNorm.Vertex.z) / 2;
+			}
+		}
+	}
 	return Normal;
 }
 

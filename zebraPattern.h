@@ -35,7 +35,7 @@ private:
 	CBox getContainingBox ( void );
 
 	void getLightPlain ( CBox Box );
-	vector<Vertice> getNormal ( Vertice ActualPoint );
+	vecMath getNormal ( int i, int j );
 	bool getNodeColor ( Vertice ActualPoint );
 };
 

@@ -18,5 +18,10 @@ union Vertice {
 std::vector<std::string> split (std::string line);
 std::vector<int> vectorStringToInt ( std::vector<std::string>tokens );
 Vertice vectorStringToVertice ( std::vector<std::string>tokens );
+Vertice add(Vertice Vec1, Vertice Vec2);
+Vertice sub(Vertice Vec1, Vertice Vec2);
+Vertice multiScalar(float scalar, Vertice Vec);
+float dotProduct ( Vertice Vec1, Vertice Vec2 );
+Vertice crossProduct ( Vertice Vec1, Vertice Vec2 );
 
 
