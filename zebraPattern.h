@@ -11,6 +11,12 @@ struct CBox{
 	Vertice dimensions;
 };
 
+enum E_Color{
+	C_BLACK,		
+	C_WHITE,	
+	C_GREY,
+};
+
 class zebraPattern{
 	 
 public:
@@ -22,7 +28,7 @@ private:
 
 	//Reads all the data from a ascii file and arenge it on a matrix
 	//teh dimension of the matrix is set by the first line in the .txt file
-	void readData ( void );
+	bool readData ( void );
 	
 	//Just print the array readed.
 	void printData ( void );
@@ -35,7 +41,7 @@ private:
 	CBox getContainingBox ( void );
 	void getLightPlain ( CBox Box );
 	vecMath getNormal ( int i, int j );
-	bool zebraPattern::getNodeColor ( Vertice InterPoint );
-	void zebraPattern::createVRML ( void );
+	E_Color getNodeColor ( Vertice InterPoint );
+	void createVRML ( void );
 };
 

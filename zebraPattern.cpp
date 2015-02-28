@@ -4,7 +4,7 @@
 #include <fstream>
 
 #define STRIP_FACTOR 0.1
-#define B_FACTOR		0.9
+#define B_FACTOR		0.5
 #define NORMAL_RANGE 3
 
 using namespace std;
@@ -17,75 +17,69 @@ struct LightPlane{
 	float	  stripWidth;
 }Plane;
 
-enum Color{
-	C_BLACK,	
-	C_GREY,	
-	C_WHITE,	
-};
-
 vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
-vector<vector<bool>>	Color;
+vector<vector<E_Color>>	Color;
 Vertice Eye;
 
 zebraPattern::zebraPattern( string fileN )
 {
 	vecMath Normal;
 	Vertice v, P, aCrossb;
-	vector<bool>colColor;
-
-	cout << "The .vrl is being generated ...\n";
+	vector<E_Color>colColor;
 
 	fileName = fileN;
-	readData();
-	getLightPlain(getContainingBox());
-	aCrossb = crossProduct(Plane.a.Vertex, Plane.b.Vertex);
 
-	for(unsigned int i = 0; i < DataFile.size(); i++){
-		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
-			Normal = getNormal ( i, j );
+	if (readData()){	
+		cout << "The .vrl is being generated ...\n";
+		getLightPlain(getContainingBox());
+		aCrossb = crossProduct(Plane.a.Vertex, Plane.b.Vertex);
 
-			/*
-				Q(t) = P + tv  where
-				v = 2(Eye - ActualPoint)UniNormal UniNormal
-			*/
-			v = multiScalar(	dotProduct( multiScalar(2.0, 
-																	sub(Eye , DataFile[i][j].Vertex) ), 
-													Normal.unitVector()), 
-									Normal.unitVector() 
-								);
+		for(unsigned int i = 0; i < DataFile.size(); i++){
+			for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
+				Normal = getNormal ( i, j );
 
-			/*
-				P(u,v) = Po + ua + vb
-				where: 
-					Po = Plane.Po	a = Plane.a b = Plane.b
+				/*
+					Q(t) = P + tv  where
+					v = 2(Eye - ActualPoint)UniNormal UniNormal
+				*/
+				v = multiScalar(	dotProduct( multiScalar(2.0, 
+																		sub(Eye , DataFile[i][j].Vertex) ), 
+														Normal.unitVector()), 
+										Normal.unitVector() 
+									);
 
-					Finding where the line and plane intersecs:
+				/*
+					P(u,v) = Po + ua + vb
+					where: 
+						Po = Plane.Po	a = Plane.a b = Plane.b
 
-										 (Plane.Po - ActualPoint)(a x b)
-				P = ActualPoint -  -------------------------------  v
-													v ( a x b )
+						Finding where the line and plane intersecs:
+
+											 (Plane.Po - ActualPoint)(a x b)
+					P = ActualPoint -  -------------------------------  v
+														v ( a x b )
 			
-			*/
-			P = add( DataFile[i][j].Vertex,
-						multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[i][j].Vertex),aCrossb) / 
-										 dotProduct(v,aCrossb),
-										 v));
+				*/
+				P = add( DataFile[i][j].Vertex,
+							multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[i][j].Vertex),aCrossb) / 
+											 dotProduct(v,aCrossb),
+											 v));
 
-			colColor.push_back(getNodeColor(P));
+				colColor.push_back(getNodeColor(P));
+			}
+			Color.push_back(colColor);
+			colColor.clear();
 		}
-		Color.push_back(colColor);
-		colColor.clear();
+		//printData();
+		createVRML();
 	}
-	//printData();
-
-	createVRML();
 }
 
 zebraPattern::~zebraPattern(void)
 {
 }
 
-void zebraPattern::readData ( void ){
+bool zebraPattern::readData ( void ){
 	string line;
 	ifstream surfaceFile (fileName);
 	vector<int> MatrixDimension;
@@ -111,7 +105,13 @@ void zebraPattern::readData ( void ){
 				j++;
 			}
 		}
+		return true;
 	}
+	else{
+		cout << "The file was: '"<< fileName << "' was not found" ;
+		return false;
+	}
+
 }
 
 CBox zebraPattern::getContainingBox ( void ){
@@ -205,12 +205,16 @@ vecMath zebraPattern::getNormal ( int row, int col ){
 	return Normal;
 }
 
-bool zebraPattern::getNodeColor ( Vertice InterPoint ){
-	bool IsBlack = false;
-	if ( fmod(InterPoint.y,Plane.stripWidth) < Plane.stripWidth*B_FACTOR ){
-		IsBlack = true;
+E_Color zebraPattern::getNodeColor ( Vertice InterPoint ){
+	E_Color NodeColor = C_WHITE;
+
+	float rest = fmod(abs(InterPoint.z) , Plane.stripWidth);
+	float width = Plane.stripWidth*B_FACTOR;
+
+	if ( rest < width/*fmod(InterPoint.y,Plane.stripWidth) < Plane.stripWidth*B_FACTOR*/ ){
+		NodeColor = C_BLACK;
 	} 
-	return IsBlack;
+	return NodeColor;
 }
 
   
@@ -245,21 +249,21 @@ void zebraPattern::createVRML ( void ){
 	vector<vector<int>> Faces;
 	vector<int> face;
 
-	vector<vector<int>> colorFaces;
-	vector<int> colorface;
+	vector<vector<E_Color>> colorFaces;
+	vector<E_Color> colorface;
 
 	std::ofstream outfile ("Surface.wrl");
 	outfile << "#VRML V2.0 utf8" << std::endl;
 	outfile << "#" << std::endl;
-	outfile << "Surface by Javier Chauvin" << std::endl<< std::endl<< std::endl;
-	outfile << "	Shape{" << std::endl;
-	outfile << "		geometry IndexedFaceSet{" << std::endl;
-	outfile << "			coord Coordinate{" << std::endl;
-	outfile << "				point[" << std::endl;
+	outfile << "#Surface by Javier Chauvin" << std::endl<< std::endl<< std::endl;
+	outfile << "Shape{" << std::endl;
+	outfile << "	geometry IndexedFaceSet{" << std::endl;
+	outfile << "		coord Coordinate{" << std::endl;
+	outfile << "			point[" << std::endl;
 
 	for(unsigned int i = 0; i < DataFile.size(); i++){
 		for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
-			outfile <<"						" << DataFile[i][j].Vertex.x;
+			outfile <<"					" << DataFile[i][j].Vertex.x;
 			outfile <<" ";
 			outfile << DataFile[i][j].Vertex.y;
 			outfile <<" ";
@@ -267,10 +271,10 @@ void zebraPattern::createVRML ( void ){
 
 			if ( i < DataFile.size()-1 && j < DataFile.at(i).size()-1 ){
 				int l, k;
-				l=i;	k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
-				l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
-				l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
-				l=i+1;k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(l*Color.size()+k); 
+				l=i;	k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+				l=i;	k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+				l=i+1;k=j+1;	face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
+				l=i+1;k=j;		face.push_back(l*DataFile.size()+k);	colorface.push_back(Color[l][k]); 
 				Faces.push_back(face);
 				face.clear();
 				colorFaces.push_back(colorface);
@@ -278,36 +282,36 @@ void zebraPattern::createVRML ( void ){
 			}
 		}
 	}
-	outfile << "						]" << std::endl;
-	outfile << "			}" << std::endl;
+	outfile << "					]" << std::endl;
+	outfile << "		}" << std::endl;
 
-	outfile << "			coordIndex[" << std::endl;;
+	outfile << "		coordIndex[" << std::endl;;
 	for(unsigned int i = 0; i < Faces.size(); i++){
-		outfile << "						";
+		outfile << "				  ";
 		for(unsigned int j = 0; j < Faces.at(i).size(); j++){
 			outfile << Faces[i][j];
 			outfile <<", ";
 		}
 		outfile <<"-1,"<< std::endl;
 	}
-	outfile << "						 ]" << std::endl;
+	outfile << "					 ]" << std::endl;
 
-	outfile << "			color Color{" << std::endl;
-	outfile << "				color[ 1 1 1, 0 0 0 ]" << std::endl;
-	outfile << "			}" << std::endl;
+	outfile << "		color Color{" << std::endl;
+	outfile << "			color[ 0 0 0, 1 1 1 ]" << std::endl;
+	outfile << "		}" << std::endl;
 
-	outfile << "			colorIndex[" << std::endl;;
+	outfile << "		colorIndex[" << std::endl;;
 	for(unsigned int i = 0; i < colorFaces.size(); i++){
-		outfile << "						";
+		outfile << "					";
 		for(unsigned int j = 0; j < colorFaces.at(i).size(); j++){
 			outfile << colorFaces[i][j];
 			outfile <<", ";
 		}
 		outfile <<"-1,"<< std::endl;
 	}
-	outfile << "						 ]" << std::endl;
+	outfile << "					 ]" << std::endl;
 
-	outfile << "			Solid FALSE" << std::endl;
+	outfile << "		solid FALSE" << std::endl;
 	outfile << "	}" << std::endl;
 	outfile << "}" << std::endl;
 
