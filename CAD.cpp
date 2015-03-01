@@ -9,17 +9,20 @@
 #include <stdio.h>
 #include <vector>
 
-#define FILE_NAME /*"car-panel1.txt"*/"ps6_sample.txt"
+#define FILE_NAME "face.txt"
 
 using namespace std;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	string fileName;
+	int rep;
 	std::cout << "Please insert the name of the file to use: ";
 	std::cin >> fileName;
+	std::cout << "Insert Laplacian Smoothing applications: ";
+	std::cin >> rep;
 	//fileName = FILE_NAME;
-	zebraPattern Surface(fileName);
+	zebraPattern Surface(fileName, rep);
 	
 	std::cin.get();
 	return 0;

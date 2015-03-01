@@ -5,10 +5,10 @@
 
 #define STRIP_FACTOR 0.1
 #define B_FACTOR		0.5
+#define GREY_FACTOR	0.1
 #define NORMAL_RANGE 3
 
 using namespace std;
-//using namespace System;
 
 struct LightPlane{
    vecMath a;
@@ -21,50 +21,29 @@ vector<vector<vecMath>> DataFile;  //This data is arrenged as a matrix
 vector<vector<E_Color>>	Color;
 Vertice Eye;
 
-zebraPattern::zebraPattern( string fileN )
+zebraPattern::zebraPattern( string fileN, int laplacianRep )
 {
 	vecMath Normal;
-	Vertice v, P, aCrossb;
+	Vertice P;
 	vector<E_Color>colColor;
 
 	fileName = fileN;
 
-	if (readData()){	
+	if (readData()){
+
+		laplacianSmoothing(laplacianRep);
 		cout << "The .vrl is being generated ...\n";
 		getLightPlain(getContainingBox());
-		aCrossb = crossProduct(Plane.a.Vertex, Plane.b.Vertex);
 
 		for(unsigned int i = 0; i < DataFile.size(); i++){
 			for(unsigned int j = 0; j < DataFile.at(i).size(); j++){
+				//Get the normal in the actual point
 				Normal = getNormal ( i, j );
 
-				/*
-					Q(t) = P + tv  where
-					v = 2(Eye - ActualPoint)UniNormal UniNormal
-				*/
-				v = multiScalar(	dotProduct( multiScalar(2.0, 
-																		sub(Eye , DataFile[i][j].Vertex) ), 
-														Normal.unitVector()), 
-										Normal.unitVector() 
-									);
+				//Using the normal, find the intersection point between the lightPlain and the projection line
+				P = getIntersectionPoint(Normal, i, j);
 
-				/*
-					P(u,v) = Po + ua + vb
-					where: 
-						Po = Plane.Po	a = Plane.a b = Plane.b
-
-						Finding where the line and plane intersecs:
-
-											 (Plane.Po - ActualPoint)(a x b)
-					P = ActualPoint -  -------------------------------  v
-														v ( a x b )
-			
-				*/
-				P = add( DataFile[i][j].Vertex,
-							multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[i][j].Vertex),aCrossb) / 
-											 dotProduct(v,aCrossb),
-											 v));
-
+				//With the intersection point, it find out if the point is black or white.
 				colColor.push_back(getNodeColor(P));
 			}
 			Color.push_back(colColor);
@@ -85,6 +64,7 @@ bool zebraPattern::readData ( void ){
 	vector<int> MatrixDimension;
 
 	if (surfaceFile.is_open()){ 
+		cout << fileName << " is being ridden...\n";
 		getline (surfaceFile,line);
 
 		std::vector<int> Dimensions =vectorStringToInt(split(line));
@@ -112,6 +92,45 @@ bool zebraPattern::readData ( void ){
 		return false;
 	}
 
+}
+
+void zebraPattern::laplacianSmoothing ( int Repetitions ){
+	vector<vector<vecMath>> lSmooth;
+	vector<vecMath> colLSmooth;
+	vecMath Smoothed;
+
+	for (int r = 0; r < Repetitions; r++){
+		for(int i = 0; i < DataFile.size(); i++){
+			for(int j = 0; j < DataFile.at(i).size(); j++){
+
+				if ( 0 == i || 0 == j || 
+						i == DataFile.size()-1 || j == DataFile.at(i).size()-1 ){
+						colLSmooth.push_back(DataFile[i][j]);
+				}
+				else{
+
+					Smoothed.Vertex.x = (DataFile[i+1][j].Vertex.x + 
+												DataFile[i-1][j].Vertex.x + 
+												DataFile[i][j-1].Vertex.x + 
+												DataFile[i][j+1].Vertex.x )/4;
+					Smoothed.Vertex.y = (DataFile[i+1][j].Vertex.y + 
+												DataFile[i-1][j].Vertex.y + 
+												DataFile[i][j-1].Vertex.y + 
+												DataFile[i][j+1].Vertex.y )/4;
+					Smoothed.Vertex.z = (DataFile[i+1][j].Vertex.z + 
+												DataFile[i-1][j].Vertex.z + 
+												DataFile[i][j-1].Vertex.z + 
+												DataFile[i][j+1].Vertex.z )/4;
+					colLSmooth.push_back(Smoothed);
+				}
+			}
+			lSmooth.push_back(colLSmooth);
+			colLSmooth.clear();
+		}
+		DataFile.assign(lSmooth.begin(),lSmooth.end());
+		lSmooth.clear();
+		cout <<"Laplacian # " << r+1<<"\n";
+	}
 }
 
 CBox zebraPattern::getContainingBox ( void ){
@@ -205,15 +224,53 @@ vecMath zebraPattern::getNormal ( int row, int col ){
 	return Normal;
 }
 
+Vertice zebraPattern::getIntersectionPoint (vecMath normal, int row, int col){
+	Vertice v, P, aCrossb;
+	aCrossb = crossProduct(Plane.a.Vertex, Plane.b.Vertex);
+		/*
+		Q(t) = P + tv  where
+		v = 2(Eye - ActualPoint)*UniNormal*UniNormal
+	*/
+	v = multiScalar(	dotProduct( multiScalar(2.0, 
+															sub(Eye , DataFile[row][col].Vertex) ), 
+											normal.unitVector()), 
+							normal.unitVector() 
+						);
+
+	/*
+		P(u,v) = Po + ua + vb
+		where: 
+			Po = Plane.Po	a = Plane.a b = Plane.b
+
+			Finding where the line and plane intersecs:
+
+									(Plane.Po - ActualPoint)(a x b)
+		P = ActualPoint -  -------------------------------  v
+											v ( a x b )
+			
+	*/
+	P = add( DataFile[row][col].Vertex,
+				multiScalar( dotProduct( sub(Plane.Po.Vertex,DataFile[row][col].Vertex),aCrossb) / 
+									dotProduct(v,aCrossb),
+									v));
+	return P;
+}
+
 E_Color zebraPattern::getNodeColor ( Vertice InterPoint ){
 	E_Color NodeColor = C_WHITE;
 
 	float rest = fmod(abs(InterPoint.z) , Plane.stripWidth);
-	float width = Plane.stripWidth*B_FACTOR;
+	//float width = Plane.stripWidth*B_FACTOR;
 
-	if ( rest < width/*fmod(InterPoint.y,Plane.stripWidth) < Plane.stripWidth*B_FACTOR*/ ){
+	if ( rest < Plane.stripWidth*GREY_FACTOR ){
+		NodeColor = C_GREY;
+	}
+	else	if ( rest < Plane.stripWidth*B_FACTOR ){
 		NodeColor = C_BLACK;
-	} 
+	}
+	else if (rest < Plane.stripWidth*(B_FACTOR+GREY_FACTOR)){
+		NodeColor = C_GREY;
+	}
 	return NodeColor;
 }
 
@@ -297,7 +354,7 @@ void zebraPattern::createVRML ( void ){
 	outfile << "					 ]" << std::endl;
 
 	outfile << "		color Color{" << std::endl;
-	outfile << "			color[ 0 0 0, 1 1 1 ]" << std::endl;
+	outfile << "			color[ 0 0 0, 1 1 1, 0.5 0.5 0.5 ]" << std::endl;
 	outfile << "		}" << std::endl;
 
 	outfile << "		colorIndex[" << std::endl;;

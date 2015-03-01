@@ -20,7 +20,7 @@ enum E_Color{
 class zebraPattern{
 	 
 public:
-	zebraPattern(string fileN);
+	zebraPattern(string fileN, int laplacianRep);
 	~zebraPattern(void);
 
 private:
@@ -41,7 +41,10 @@ private:
 	CBox getContainingBox ( void );
 	void getLightPlain ( CBox Box );
 	vecMath getNormal ( int i, int j );
+	Vertice getIntersectionPoint (vecMath normal, int row, int col);
 	E_Color getNodeColor ( Vertice InterPoint );
 	void createVRML ( void );
+
+	void laplacianSmoothing ( int Repetitions );
 };
 
