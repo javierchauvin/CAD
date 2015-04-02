@@ -13,6 +13,34 @@ enum AxisName{
 //	cout << "Inside the brezier \n";
 //}
 
+void Bezier::getTangentColor( void ){
+	Bezier::numberOfTangents = 20;
+
+	int total = 255;
+	int R = 0, G = total, B = 0;
+
+	vector<int> oneColor (3);
+
+	for (int i = 0; i<numberOfTangents; i++){
+
+		if (total/numberOfTangents < G){
+			G -= total/numberOfTangents;
+		}
+		if (B < total ){
+			B += total/numberOfTangents;
+		}
+		oneColor[0] = R;
+		oneColor[1] = G;
+		oneColor[2] = B;
+		Colors.push_back(oneColor);
+	}
+
+	for (int i=0; i<numberOfTangents; i++){
+		cout<< Colors[i][0] <<" "<< Colors[i][1] <<" "<< Colors[i][2] <<"\n";
+	}
+
+}
+
 void Bezier::drawCurves ( void ){
 	
 	cout << "Inside the brezier \n";
@@ -33,7 +61,6 @@ void Bezier::drawCurves ( void ){
 	outfile << "	geometry IndexedLineSet{" << std::endl;
 	outfile << "		coord Coordinate{" << std::endl;
 	outfile << "			point[" << std::endl;
-	//Drawing axis
 	outfile << "                0.0000  0.0000  0.000" << std::endl;
    outfile << "	             10.0000  10.0000  10.0000" << std::endl;
    outfile << "	             10.0000  10.0000  30.0000" << std::endl;
@@ -41,7 +68,7 @@ void Bezier::drawCurves ( void ){
 	outfile << "		}" << std::endl;
 
 	outfile << "		coordIndex[" << std::endl;;
-	//Drawing axis 
+
 	outfile << "		            0   1   -1" << std::endl;    
    outfile << "						1   2   -1" << std::endl; 
    outfile << "						0   2   -1" << std::endl; 

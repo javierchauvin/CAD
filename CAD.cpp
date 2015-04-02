@@ -26,6 +26,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 	Bezier Curves;
 	Curves.drawCurves();	
+	Curves.getTangentColor();
 	std::cout << "Drawing";
 
 	std::cin.get();
