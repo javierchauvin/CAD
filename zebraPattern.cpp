@@ -32,7 +32,7 @@ zebraPattern::zebraPattern( string fileN, int laplacianRep )
 	if (readData()){
 
 		laplacianSmoothing(laplacianRep);
-		cout << "The .vrl is being generated ...\n";
+		cout << "The .wrl is being generated ...\n";
 		getLightPlain(getContainingBox());
 
 		for(unsigned int i = 0; i < DataFile.size(); i++){
@@ -242,9 +242,9 @@ Vertice zebraPattern::getIntersectionPoint (vecMath normal, int row, int col){
 		where: 
 			Po = Plane.Po	a = Plane.a b = Plane.b
 
-			Finding where the line and plane intersecs:
+			Finding where the line and plane intersec:
 
-									(Plane.Po - ActualPoint)(a x b)
+								 (Plane.Po - ActualPoint)(a x b)
 		P = ActualPoint -  -------------------------------  v
 											v ( a x b )
 			
